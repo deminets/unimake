@@ -1,0 +1,124 @@
+
+ifdef GD_INCLUDE_MAKEFILES
+-include $(GD_INCLUDE_MAKEFILES)
+endif
+
+# Заполнение целей по умолчанию
+ifndef bins-t
+bins-t := $(notdir $(abspath .))
+$(bins-t)-srcs := $(foreach file,$(wildcard *.c),$(file)) $(foreach file,$(wildcard *.cpp),$(file))
+endif
+
+# Консольные команды
+CD		?= cd
+MKDIR		?= mkdir -p
+RM		?= rm -f
+MAKE		?= make
+COPY		?= cp
+export CD MKDIR RM MAKE COPY
+# Команды сборки
+CCSUFIX		?= gcc
+CC		?= $(CROSS_COMPILE)$(CCSUFIX)
+#CP		?= $(CC) -E
+CP		?= g++
+LINK		?= $(CC)
+LD		?= $(CC)
+export LINK CC CP LD		
+
+# Глобальные переменные
+OBJS_DIR	?= ./.objs
+BINS_DIR	?= ./.bins
+DOCS_DIR	?= ./.docs
+
+# asm=ASFLAGS c=CCFLAGS cpp=CPPFLAGS ld=LDFLAGS
+# lib ar=ARFLAGS
+
+#============================================
+PHONY += all
+all : build_all_targets
+	@:
+
+#============================================
+# Сборка отдельных объектных модулей
+define object_build_gcc
+$(OBJS_DIR)/$(1)/$(filter-out \,$(shell $(CC) -MM $(2)))
+		@echo "  [$(3)] $$@ $$< $$(sort $$(if $$($$(<)-ccflags_exc),$$($$(<)-ccflags_exc),$$($(1)-ccflags_add) $$($$(<)-ccflags_add)))"
+		@$($(3)) -c $$< -o $$@ $$(sort $$(if $$($$(<)-ccflags_exc),$$($$(<)-ccflags_exc),$$($(1)-ccflags_add) $$($$(<)-ccflags_add)))
+endef
+
+#============================================
+# Сборка целей, линковка
+define func_target_build
+
+$(1)-ccsrcs := $(filter %.c,$(wildcard $(sort $($(1)-srcs))))
+$(1)-ccobjs := $$(patsubst %.c,%.o,$$($(1)-ccsrcs))
+$(1)-cpsrcs := $(filter %.cpp,$(wildcard $(sort $($(1)-srcs))))
+$(1)-cpobjs := $$(patsubst %.cpp,%.o,$$($(1)-cpsrcs))
+$(1)-target_objs := $$($(1)-ccobjs:%=$(OBJS_DIR)/$(1)/%) $$($(1)-cpobjs:%=$(OBJS_DIR)/$(1)/%)
+
+$(foreach src,$(filter %.c,$(wildcard $(sort $($(1)-srcs)))),$(eval $(call object_build_gcc,$(1),$(src),CC)))
+$(foreach src,$(filter %.cpp,$(wildcard $(sort $($(1)-srcs)))),$(eval $(call object_build_gcc,$(1),$(src),CP)))
+
+$(OBJS_DIR)/$(1) :
+	@echo "  [MD] $$@"
+	@$(MKDIR) $$@
+
+$(BINS_DIR)/$(1) : $(OBJS_DIR)/$(1) $$($(1)-target_objs)
+	@echo "  [LD] $$@ $$($(1)-ldflags_add)"
+	@$(LINK) $$($(1)-ldflags_add) -o $$@ $$($(1)-target_objs)
+	@:
+
+$(1)-target_clean := $(BINS_DIR)/$(1) $(OBJS_DIR)/$(1)
+PHONY += $(1)-target_clean
+$(1)-target_clean :
+	@echo "  [RM] $(1)"
+	@$(RM) -r $(BINS_DIR)/$(1) $(OBJS_DIR)/$(1)
+	@:
+endef
+
+# Разворачиваем список целей
+$(foreach trg,$(bins-t),$(eval $(call func_target_build,$(trg))))
+
+#============================================
+# Создаём папку для результатов линковки
+$(BINS_DIR) :
+	@echo "  [MD] $(BINS_DIR)"
+	@$(MKDIR) $(BINS_DIR)
+
+#============================================
+PHONY += start_message
+start_message :
+	@echo "  [MAKE][$(MAKELEVEL)] START $(MAKECMDGOALS)"
+
+PHONY += end_message
+end_message :
+	@echo "  [MAKE][$(MAKELEVEL)] STOP  $(MAKECMDGOALS)"
+
+#============================================
+PHONY += build_all_targets
+build_all_targets : start_message $(BINS_DIR) $(bins-t:%=$(BINS_DIR)/%) end_message
+	@:
+
+#============================================
+PHONY += clean
+clean : start_message $(foreach rule,$(bins-t),$(if $(wildcard $($(rule)-target_clean)),$(rule)-target_clean)) end_message
+	@:
+
+#============================================
+PHONY += doxygen
+doxygen :
+#	$(info $(L_DOX_DIRS))
+	@:
+
+#============================================
+# Цель по умолчанию, предназначена для вывода ошибок
+.DEFAULT:
+	$(warning !!!WARNING!!!: not found rule for target = '$(@)')
+	@:
+
+#============================================
+# Абстрактные цели
+.PHONY : $(PHONY)
+#============================================
+# -== END OF FILE ==-
+#============================================
