@@ -18,10 +18,12 @@ bins-t - список целей, имена бинарных файлов.
 
 Часть опций можно хранить в исходном коде, например: -O2:-Wall:-std=c99    
 для этого в исходном Си коде следует добавить следующие строки:    
-#ifdef MAKE_GET_FLAGS    
-#error CCFLAGS:-O2:-Wall:-std=c99   
-#error LDFLAGS:-lm   
-#endif   
+```
+#ifdef MAKE_GET_FLAGS
+#error CCFLAGS:-O2:-Wall:-std=c99
+#error LDFLAGS:-lm
+#endif
+```
 Указанные флаги, в процессе сборки, будут добавлены к флагам заданным в Makefile.   
 
 # Примеры
