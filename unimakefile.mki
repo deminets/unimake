@@ -41,9 +41,15 @@ all : build_all_targets
 #============================================
 # Сборка отдельных объектных модулей
 define object_build_gcc
+$(2)-ccflags_tmp := $$(shell $(CC) -E -MM $(2) -DMAKE_GET_FLAGS 2>&1)
+$(2)-ccflags_ext := $$(subst :, ,$$(subst CCFLAGS:,,$$(word 1,$$(filter CCFLAGS:%,$$($(2)-ccflags_tmp)))))
+$(1)-ldflags_ext += $$(subst :, ,$$(subst LDFLAGS:,,$$(word 1,$$(filter LDFLAGS:%,$$($(2)-ccflags_tmp)))))
+
+$(2)-ccflags_all := $$(sort $$(if $$($$(<)-ccflags_exc),$$($$(<)-ccflags_exc),$$($(1)-ccflags_add) $$($$(<)-ccflags_add) $$($(2)-ccflags_ext)))
+
 $(OBJS_DIR)/$(1)/$(filter-out \,$(shell $(CC) -MM $(2)))
-		@echo "  [$(3)] $$@ $$< $$(sort $$(if $$($$(<)-ccflags_exc),$$($$(<)-ccflags_exc),$$($(1)-ccflags_add) $$($$(<)-ccflags_add)))"
-		@$($(3)) -c $$< -o $$@ $$(sort $$(if $$($$(<)-ccflags_exc),$$($$(<)-ccflags_exc),$$($(1)-ccflags_add) $$($$(<)-ccflags_add)))
+		@echo "  [$(3)] $$@ $$< $$($(2)-ccflags_all)"
+		@$($(3)) -c $$< -o $$@ $$($(2)-ccflags_all)
 endef
 
 #============================================
@@ -63,9 +69,11 @@ $(OBJS_DIR)/$(1) :
 	@echo "  [MD] $$@"
 	@$(MKDIR) $$@
 
+$(1)-ldflags_all := $$(sort $$($(1)-ldflags_add) $$($(1)-ldflags_ext))
+
 $(BINS_DIR)/$(1) : $(OBJS_DIR)/$(1) $$($(1)-target_objs)
-	@echo "  [LD] $$@ $$($(1)-ldflags_add)"
-	@$(LINK) $$($(1)-ldflags_add) -o $$@ $$($(1)-target_objs)
+	@echo "  [LD] $$@ $$($(1)-ldflags_all)"
+	@$(LINK) $$($(1)-ldflags_all) -o $$@ $$($(1)-target_objs)
 	@:
 
 $(1)-target_clean := $(BINS_DIR)/$(1) $(OBJS_DIR)/$(1)
