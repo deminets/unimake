@@ -31,7 +31,7 @@ bins-t - список целей, имена бинарных файлов.
 1.  
 Требуется собрать два приложения с различными опциями компиляции, используя один общий файл.
 В данном случае Makefile будет выглядеть следующим образом
-
+```
 bins-t += app1 app2  
 
 app1-srcs += file1.c file_share.c   
@@ -43,4 +43,4 @@ app2-srcs += file2.c file_share.c
 app1-ccflags_add := -O1  
 app1-ldflags_add := -lrt  
 file2.c-ccflags_add := -Wall  
-
+```
