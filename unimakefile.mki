@@ -1,3 +1,13 @@
+# license: GPL2
+# project: UniMake, https://github.com/deminets/unimake
+# file: unimake.mki
+# virsion: 1.0.7
+# date: 30.10.2015
+# update: 05.09.2017
+# author: Deminets Sergey
+# copyright: Deminets Sergey, 2015
+# brief: Универсальный Makefile
+#
 
 ifdef GD_INCLUDE_MAKEFILES
 -include $(GD_INCLUDE_MAKEFILES)
