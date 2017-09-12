@@ -1,3 +1,4 @@
+#
 # license: GPL2
 # project: UniMake, https://github.com/deminets/unimake
 # file: unimake.mki
@@ -9,14 +10,9 @@
 # brief: Универсальный Makefile
 #
 
+# В переменной GD_INCLUDE_MAKEFILES можно указать глобальный include
 ifdef GD_INCLUDE_MAKEFILES
 -include $(GD_INCLUDE_MAKEFILES)
-endif
-
-# Заполнение целей по умолчанию
-ifndef bins-t
-bins-t := $(notdir $(abspath .))
-$(bins-t)-srcs := $(foreach file,$(wildcard *.c),$(file)) $(foreach file,$(wildcard *.cpp),$(file))
 endif
 
 # Консольные команды
@@ -39,9 +35,24 @@ export LINK CC CP LD
 OBJS_DIR	?= ./.objs
 BINS_DIR	?= ./.bins
 DOCS_DIR	?= ./.docs
+export UNIMAKE_RECURSIVE_LIMIT
 
 # asm=ASFLAGS c=CCFLAGS cpp=CPPFLAGS ld=LDFLAGS
 # lib ar=ARFLAGS
+
+#============================================
+# Заполнение целей по умолчанию
+ifndef bins-t
+bins-t := $(notdir $(abspath .))
+$(bins-t)-srcs := $(foreach file,$(wildcard *.c),$(file)) $(foreach file,$(wildcard *.cpp),$(file))
+bins-t := $(if $(strip $($(bins-t)-srcs)),$(bins-t),)
+endif
+
+#============================================
+# Заполнение рекурсивных целей с учётом ограничения в переменной UNIMAKE_RECURSIVE_LIMIT
+ifneq '$(UNIMAKE_RECURSIVE_LIMIT)' '$(MAKELEVEL)'
+dirs-t := $(strip $(foreach file,$(wildcard *),$(if $(wildcard ./$(file)/*akefile),$(file))))
+endif
 
 #============================================
 PHONY += all
@@ -49,6 +60,7 @@ all : build_all_targets
 	@:
 
 #============================================
+# Флаги сборки
 define obj_flags
 $(2)-ccflags_tmp := $$(shell $(CC) -E -MM $(2) -DUNIMAKE_GET_FLAGS 2>&1)
 $(2)-ccflags_ext := $$(subst :, ,$$(subst CCFLAGS:,,$$(word 1,$$(filter CCFLAGS:%,$$($(2)-ccflags_tmp)))))
@@ -109,9 +121,23 @@ $(BINS_DIR) :
 	@$(MKDIR) $(BINS_DIR)
 
 #============================================
+# Рекурсивная сборка
+define func_target_dirs
+PHONY += $(1)-target_dirs
+$(1)-target_dirs :
+	@echo "  [MK] $(1)"
+	@$(MAKE) -C $(1)
+	@:
+endef
+$(foreach trg,$(dirs-t),$(eval $(call func_target_dirs,$(trg))))
+#============================================
 PHONY += start_message
 start_message :
 	@echo "  [MAKE][$(MAKELEVEL)] START $(MAKECMDGOALS)"
+
+PHONY += dirs_targets
+dirs_targets : $(foreach rule,$(dirs-t),$(rule)-target_dirs)
+	@:
 
 PHONY += end_message
 end_message :
@@ -119,7 +145,7 @@ end_message :
 
 #============================================
 PHONY += build_all_targets
-build_all_targets : start_message $(BINS_DIR) $(bins-t:%=$(BINS_DIR)/%) end_message
+build_all_targets : start_message dirs_targets $(if $(strip $(bins-t)),$(BINS_DIR)) $(bins-t:%=$(BINS_DIR)/%) end_message
 	@:
 
 #============================================
