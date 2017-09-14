@@ -2,9 +2,9 @@
 # license: GPL2
 # project: UniMake, https://github.com/deminets/unimake
 # file: unimake.mki
-# virsion: 1.0.7
+# virsion: 1.0.8
 # date: 30.10.2015
-# update: 05.09.2017
+# update: 14.09.2017
 # author: Deminets Sergey
 # copyright: Deminets Sergey, 2015
 # brief: Универсальный Makefile
@@ -25,7 +25,6 @@ export CD MKDIR RM MAKE COPY
 # Команды сборки
 CCSUFIX		?= gcc
 CC		?= $(CROSS_COMPILE)$(CCSUFIX)
-#CP		?= $(CC) -E
 CP		?= g++
 LINK		?= $(CC)
 LD		?= $(CC)
@@ -126,7 +125,7 @@ define func_target_dirs
 PHONY += $(1)-target_dirs
 $(1)-target_dirs :
 	@echo "  [MK] $(1)"
-	@$(MAKE) -C $(1)
+	@$(MAKE) -C $(1) $(MAKECMDGOALS)
 	@:
 endef
 $(foreach trg,$(dirs-t),$(eval $(call func_target_dirs,$(trg))))
@@ -150,7 +149,7 @@ build_all_targets : start_message dirs_targets $(if $(strip $(bins-t)),$(BINS_DI
 
 #============================================
 PHONY += clean
-clean : start_message $(foreach rule,$(bins-t),$(if $(wildcard $($(rule)-target_clean)),$(rule)-target_clean)) end_message
+clean : start_message dirs_targets $(foreach rule,$(bins-t),$(if $(wildcard $($(rule)-target_clean)),$(rule)-target_clean)) end_message
 	@:
 
 #============================================
