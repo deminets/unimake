@@ -2,9 +2,9 @@
 # license: GPL2
 # project: UniMake, https://github.com/deminets/unimake
 # file: unimake.mki
-# virsion: 1.0.9
+# virsion: 1.0.8
 # date: 30.10.2015
-# update: 15.09.2017
+# update: 14.09.2017
 # author: Deminets Sergey
 # copyright: Deminets Sergey, 2015
 # brief: Универсальный Makefile
@@ -30,7 +30,8 @@ CC		?= $(CROSS_COMPILE)$(CCSUFIX)
 CP		?= g++
 LINK		?= $(CC)
 LD		?= $(CC)
-export LINK CC CP LD		
+AR		?= ar
+export LINK CC CP LD AR
 
 # Глобальные переменные
 OBJS_DIR	?= ./.objs
@@ -44,9 +45,11 @@ export UNIMAKE_RECURSIVE_LIMIT
 #============================================
 # Заполнение целей по умолчанию
 ifndef bins-t
+ifndef libs-t
 bins-t := $(notdir $(abspath .))
 $(bins-t)-srcs := $(foreach file,$(wildcard *.c),$(file)) $(foreach file,$(wildcard *.cpp),$(file))
 bins-t := $(if $(strip $($(bins-t)-srcs)),$(bins-t),)
+endif
 endif
 
 #============================================
@@ -100,8 +103,13 @@ $(OBJS_DIR)/$(1) :
 $(1)-ldflags_all := $$(sort $$($(1)-ldflags_add) $$($(1)-ldflags_ext))
 
 $(BINS_DIR)/$(1) : $(OBJS_DIR)/$(1) $$($(1)-target_objs)
+ifeq ($(2),0)
 	@echo "  [LD] $$@ $$($(1)-ldflags_all)"
 	@$(LINK) -o $$@ $$($(1)-target_objs) $$($(1)-objs_add) $$($(1)-ldflags_all)
+else
+	@echo "  [AR] $$@ $$($(1)-ldflags_all)"
+	@$(AR) rcs $$@ $$($(1)-target_objs) $$($(1)-objs_add) $$($(1)-ldflags_all)
+endif
 	@:
 
 $(1)-target_clean := $(BINS_DIR)/$(1) $(OBJS_DIR)/$(1)
@@ -113,7 +121,8 @@ $(1)-target_clean :
 endef
 
 # Разворачиваем список целей
-$(foreach trg,$(bins-t),$(eval $(call func_target_build,$(trg))))
+$(foreach trg,$(bins-t),$(eval $(call func_target_build,$(trg),0)))
+$(foreach trg,$(libs-t),$(eval $(call func_target_build,$(trg),1)))
 
 #============================================
 # Создаём папку для результатов линковки
@@ -146,7 +155,7 @@ end_message :
 
 #============================================
 PHONY += build_all_targets
-build_all_targets : start_message dirs_targets $(if $(strip $(bins-t)),$(BINS_DIR)) $(bins-t:%=$(BINS_DIR)/%) end_message
+build_all_targets : start_message dirs_targets $(if $(strip $(bins-t)$(libs-t)),$(BINS_DIR)) $(libs-t:%=$(BINS_DIR)/%) $(bins-t:%=$(BINS_DIR)/%) end_message
 	@:
 
 #============================================
