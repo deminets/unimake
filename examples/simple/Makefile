@@ -1,2 +1,2 @@
 
-include unimakefile.mki
+include ../../unimakefile.mki
