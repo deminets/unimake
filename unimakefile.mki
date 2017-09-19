@@ -79,6 +79,7 @@ define object_build_gcc
 $(eval $(call obj_flags,$(1),$(2),$(3)))
 
 $(OBJS_DIR)/$(1)/$(patsubst ../%,%,$(filter-out ./,$(dir $(2))))$(filter-out \,$(shell $(CC) -MM $(2) $($(2)-ccflags_all) ))
+		@$(MKDIR) "$$(dir $$@)"
 		@echo "  [$(3)] $$@ $$< $$($(2)-ccflags_all)"
 		@$($(3)) -c $$< -o $$@ $$($(2)-ccflags_all)
 endef
