@@ -41,7 +41,7 @@ bins-t += app1 app2
 app1-srcs += file1.c file_share.c   
 app1-ccflags_add := -O2  
 app1-ldflags_add := -lm  
-file_share.c-ccflags_exc := -s -O3 r -Wall -std=c99  
+file_share.c-ccflags_exc := -s -O3 -Wall -std=c99  
 
 app2-srcs += file2.c file_share.c  
 app1-ccflags_add := -O1  
