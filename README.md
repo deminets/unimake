@@ -30,7 +30,7 @@ libs-t - список целей, имена результирующих бин
 Часть опций можно хранить в исходном коде, например: -O2:-Wall:-std=c99    
 для этого в исходном Си коде следует добавить следующие строки:    
 ```
-#ifdef MAKE_GET_FLAGS
+#ifdef UNIMAKE_GET_FLAGS
 #error CCFLAGS:-O2:-Wall:-std=c99
 #error LDFLAGS:-lm
 #endif
